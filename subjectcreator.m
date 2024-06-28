@@ -21,13 +21,14 @@ M = DCM.M;
 spm('defaults', 'eeg');
 
 % Configure DCM
-DCM = spm_dcm_erp_dipfit(DCM);
+% DCM = spm_dcm_erp_dipfit(DCM);
 DCM.M.Nmax =1;
-DCM.options.Nmodes = 16;
-M.dipfit.type = model_type;
-M.dipfit.modality = model_type;
-M.dipfit.Ns = 1;
-M.dipfit.Nc = 1;
+% DCM.options.Nmodes = 16;
+
+% M.dipfit.type = model_type;
+% M.dipfit.modality = model_type;
+% M.dipfit.Ns = 1;
+% M.dipfit.Nc = 1;
 U.dt = DCM.xU.dt;
 U.X = DCM.xU.X;
 
@@ -72,12 +73,10 @@ end
 
 
 for i=1:3
-    DCM.Ep.A{1, i} = DCM.Ep.A{i} .*  DCM.A{1, i} - (1 - DCM.A{1, i}) .* 32;
-    DCM.M.pE.A{1, i} = DCM.M.pE.A{i} .*  DCM.A{1, i} - (1 - DCM.A{1, i}) .* 32;
-    DCM.M.pC.A{1, i} = DCM.M.pC.A{i} .*  DCM.A{1, i} - (1 - DCM.A{1, i}) .* 32; 
+    DCM.Ep.A{1, i} = DCM.Ep.A{i} .*  DCM.A{1, i} - (1 - DCM.A{1, i}) .* 4;
+    DCM.M.pE.A{1, i} = DCM.M.pE.A{i} .*  DCM.A{1, i} - (1 - DCM.A{1, i}) .* 4;
+    DCM.M.pC.A{1, i} = DCM.M.pC.A{i} .*  DCM.A{1, i}; 
 end 
-
-
 
 
 i = 1;
@@ -87,6 +86,9 @@ subfolder = fullfile(save_folder, sprintf('subject_%d', param_key));
 if ~exist(subfolder, 'dir')
     mkdir(subfolder);
 end
+
+spm_figure('GetWin', 'inputs and erps')
+clf
 
 while i <= Nm
     
@@ -101,7 +103,7 @@ while i <= Nm
     U.u = U.u + noise_u; 
 
     DCMtemp = DCM;
-    DCMtemp.M.hE = 8;
+    DCMtemp.M.hE = 6;
     DCMtemp.xU.u = U.u;
     DCMtemp.M.P = P_noisy;
     DCMtemp.M.pE = P_noisy;
@@ -109,12 +111,15 @@ while i <= Nm
     DCMtemp.M.gC = spm_unvec(0*spm_vec(DCMtemp.M.gC),DCMtemp.M.gC);
     DCMtemp.M.gE = DCMtemp.Eg;
     DCMtemp.name = strcat(DCM.name, '_temp');
+    DCMtemp.options.DATA = 0;
     DCMtemp = spm_dcm_erp(DCMtemp);
-    erp = DCMtemp.H;
+    erp = DCMtemp.z;
     pst = DCMtemp.xY.pst;
 
+    clear DCMtemp
+
     all_erp = {};
-    all_pst = [];
+    % all_pst = [];
     
     for cond = 1:length(erp)
         y = erp{cond} + (noise_magnitude_erp * randn(size(erp{cond})));
@@ -123,8 +128,10 @@ while i <= Nm
             continue; 
         end
 
+        % y = y * DCM.M.U'; % Project in sensor space
+
         all_erp = [all_erp, y]; % Collecting all erp outputs
-        all_pst = [all_pst, pst]; % Collecting time stamps
+        % all_pst = [all_pst, pst]; % Collecting time stamps
         % % % Plotting ERP for the current participant and condition
         % figure; 
         % plot(pst, y, 'b');
@@ -141,18 +148,26 @@ while i <= Nm
     if ~isempty(all_erp)
         % Update DCM structure 
         DCMi = DCM;
-        DCMi.xY.y = all_erp;
-        DCMi.xY.pst = all_pst;
-        DCMi.xU = U;
+        DCMi.xY.y   = all_erp;
+        DCMi.xY.pst = pst;
+        % DCMi.xU = U; %not necessary
         DCMi.M = M;
         DCMi.Ep = P_noisy;
-        %DCMi.Ep.A = DCM.Ep.A;
+        DCMi.Ep.A = DCM.Ep.A;
         DCMi.M.pE.A = DCM.M.pE.A;
         DCMi.M.pC.A = DCM.M.pC.A;
         DCMi.A = DCM.A;
-        DCMi.B =DCM.B;
-        DCMi.M.pE.C= DCM.M.pE.C * 4;
-        
+        DCMi.B = DCM.B;
+        % DCMi.M.pE.C= DCM.M.pE.C * 4;
+
+
+        subplot(3,1,1)
+        plot(pst, U.u);
+        subplot(3,1,2);
+        plot(pst, all_erp{1})
+        subplot(3,1,3);
+        plot(pst, all_erp{2})
+        drawnow
 
         % Initialize parts of the filename based on custom matrices
         part1 = '';
@@ -175,5 +190,6 @@ while i <= Nm
         save(fullFilePath, 'DCMi', '-v7.3');
 
         i = i + 1;
+        clear DCMi
     end
 end

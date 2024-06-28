@@ -4,7 +4,7 @@ datapath = fullfile(pwd, 'data', 'AEF');
 
 spm('defaults', 'eeg');
 
-dataset = 2; 
+dataset = 1; 
 model   = 'ERP'; 
 switch dataset
     case 1

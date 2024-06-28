@@ -39,9 +39,10 @@ for i = 1:n
     DCMs{i}.M.Nmax = 64;
 end
 
-spm_plot_ci(DCMs{1}.Ep, DCMs{i}.Cp, DCMs{i}.x, '', 'log');
-spm_plot_ci(DCMs{2}.Ep, DCMs{i}.Cp, DCMs{i}.x, '', 'log');
-spm_plot_ci(DCMs{3}.Ep, DCMs{i}.Cp, DCMs{i}.x, '', 'log');
+spm_figure('GetWin', 'parameters')
+spm_plot_ci(DCMs{1}.Ep, DCMs{i}.Cp, '', 'log');
+spm_plot_ci(DCMs{2}.Ep, DCMs{i}.Cp, '', 'log');
+spm_plot_ci(DCMs{3}.Ep, DCMs{i}.Cp, '', 'log');
 
 
 
@@ -69,10 +70,13 @@ DCMij = cell(n, n);
 for i = 1:n
     for j = 1:n
         DCMtemp = DCMs{i};
+        DCMtemp.options.DATA = 0; 
         DCMtemp.xY.y = DCMs{j}.xY.y;
+        DMCtemp.M = rmfield(DCMtemp.M, 'U'); % force computing spatial filter again
         DCMtemp.name = spm_file(DCMtemp.name, 'prefix', 'bmc_');
         DCMtemp.assignment_tag = sprintf('Model %d, Timeseries %d', i, j); % Add tracking tag
         DCMij{i,j} = spm_dcm_erp(DCMtemp);
+        clear DCMtemp; 
     end
 end
 

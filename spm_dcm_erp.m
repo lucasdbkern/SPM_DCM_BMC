@@ -286,7 +286,8 @@ end
 x0  = ones(Ns,1)*spm_vec(M.x)';         % expansion point for states
 for i = 1:Nt
     K{i} = x{i} - x0;                   % centre on expansion point
-    y{i} = M.R*K{i}*L'*M.U;             % prediction (sensor space)
+    z{i} = M.R*K{i}*L';                 % prediction (sensor space, unreduced)
+    y{i} = z{i}*M.U;                    % prediction (sensor space)
     r{i} = M.R*xY.y{i}*M.U - y{i};      % residuals  (sensor space)
     K{i} = K{i}(:,j);                   % Depolarization in sources
 end
@@ -307,6 +308,7 @@ DCM.H  = y;                    % conditional responses (y), projected space
 DCM.K  = K;                    % conditional responses (x) (contributing)
 DCM.x  = x;                    % conditional responses (x) (all states)
 DCM.R  = r;                    % conditional residuals (y)
+DCM.z  = z; 
 DCM.F  = F;                    % Laplace log evidence
 DCM.L  = LE;                   % Laplace log evidence components
 DCM.ID = ID;                   % data ID
